@@ -45,7 +45,7 @@ def main(argv):
         feature_columns=my_feature_columns,
         # Two hidden layers of 10 nodes each.
         hidden_units=[10, 10],
-        # The model must choose between 3 classes.
+        # The model must choose between 2 classes.
         n_classes=2)
 
     # Train the Model.

@@ -15,25 +15,24 @@ FULL_DATA = "~/Desktop/data/1year_cols.csv"
 TRAIN_DATA = "~/Desktop/data/1year_train.csv"
 TEST_DATA = "~/Desktop/data/1year_test.csv"
 
+
 CSV_COLUMN_NAMES = ['Attr1','Attr2','Attr3','Attr4','Attr5','class']
 RESPONSE = [0, 1]
 
 
 def treat_data(FULL_DATA, TRAIN_DATA, TEST_DATA): 
+    """brings in full csv and removes bad values 
+    returns new csvs in place using the paths above """
     full = pd.read_csv(FULL_DATA, names=CSV_COLUMN_NAMES, header=0) 
-    print(full)
-    print(full.dtypes)
-    full = full[full.Attr1 != '?']
-    full = full[full.Attr2 != '?']
-    full = full[full.Attr3 != '?']
-    full = full[full.Attr4 != '?']
-    full = full[full.Attr5 != '?']
+    
+    for col in list(full)[:-1]: 
+        print(col) 
+        full = full[full[col] != '?']
 
     is_train = np.random.uniform(0, 1, len(full)) <= .8
     train, test = full[is_train == True], full[is_train == False]
     train.to_csv(TRAIN_DATA) 
     test.to_csv(TEST_DATA)
-
 
 
 def load_data(y_name='class'):
