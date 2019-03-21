@@ -49,6 +49,7 @@ def load_data(y_name='class'):
     test_x, test_y = test, test.pop(y_name)
 
     print(train_x.dtypes)
+    print(train_x)
     return (train_x, train_y), (test_x, test_y)
 
 
