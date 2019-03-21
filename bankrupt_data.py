@@ -48,8 +48,8 @@ def load_data(y_name='class'):
     test = pd.read_csv(test_path, names=CSV_COLUMN_NAMES, header=0)
     test_x, test_y = test, test.pop(y_name)
 
-    print(train_x.dtypes)
-    print(train_x)
+    # print(train_x.dtypes)
+    # print(train_x)
     return (train_x, train_y), (test_x, test_y)
 
 

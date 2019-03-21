@@ -32,8 +32,6 @@ def main(argv):
 
     # Fetch the data
     (train_x, train_y), (test_x, test_y) = bankrupt_data.load_data()
-    # print(train_x) 
-    print(train_y)
 
 
     # Feature columns describe how to use the input.
