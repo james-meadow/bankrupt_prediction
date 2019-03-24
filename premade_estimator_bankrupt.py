@@ -16,12 +16,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-
 import argparse
 import tensorflow as tf
-from tensorflow.compat.v1.saved_model import simple_save
+# from tensorflow.compat.v1.saved_model import simple_save
 import bankrupt_data
 
 
@@ -45,8 +42,10 @@ def main(argv):
 
     classifier = tf.estimator.DNNClassifier(
         feature_columns=my_feature_columns,
+        # hidden_units=[64, 64, 64],
         hidden_units=[20, 20, 20],
-        n_classes=2)
+        n_classes=2, 
+        model_dir='model/')
 
     # Train the Model.
     classifier.train(
@@ -81,17 +80,20 @@ def main(argv):
             labels=None, batch_size=args.batch_size))    
     predictions = [p['class_ids'][0] for p in raw_predictions]
     confusion_matrix = tf.confusion_matrix(list(test_y.tolist()), predictions)
-    print(confusion_matrix)
     with tf.Session():
         print('\nConfusion Matrix:\n', tf.Tensor.eval(confusion_matrix,feed_dict=None, session=None))
 
     # for p in range(0,len(predict_x['Attr1'])): 
     #     print(next(predictions))
 
+    # classifier.export_savedmodel(
+    #     export_dir_base='model/',
+    #     serving_input_receiver_fn=bankrupt_data.eval_input_fn(test_x, labels=None, batch_size=args.batch_size)
+    # )
 
     # with tf.Session() as sess:
     #     simple_save(sess,
-    #         '.',
+    #         'model/',
     #         inputs={"x": x, "y": y},       #####################33add inputs 
     #         outputs={"z": z})
 

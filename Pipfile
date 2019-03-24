@@ -9,6 +9,7 @@ verify_ssl = true
 tensorflow = "*"
 pandas = "*"
 numpy = "*"
+tensorflow-contrib = "*"
 
 [requires]
 python_version = "3.7"
