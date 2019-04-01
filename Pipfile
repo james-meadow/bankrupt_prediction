@@ -6,10 +6,7 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-tensorflow = "*"
-pandas = "*"
-numpy = "*"
-tensorflow-contrib = "*"
+requirements-txt = "*"
 
 [requires]
 python_version = "3.7"
