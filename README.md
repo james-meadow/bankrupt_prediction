@@ -302,7 +302,11 @@ MODEL_NAME=bankrupt_prediction
 REGION=us-central1
 BUCKET_NAME=bankrupt-prediction
 OUTPUT_PATH=gs://$BUCKET_NAME/model
-MODEL_BINARIES=gs://$BUCKET_NAME/model/1554098440/
+deploymentUri=gs://$BUCKET_NAME/model/1554098440/
+VERSION_NAME=v3
+INPUT_FILE=test_prediction.json
+
+Model_Name must be unique within the Cloud ML Engine model.
 
 ## create model placeholder
 gcloud ml-engine models create $MODEL_NAME --regions=$REGION
@@ -312,9 +316,9 @@ gsutil ls -r $OUTPUT_PATH
 gsutil ls -r $MODEL_BINARIES
 
 ## create a new version of an existing model
-gcloud ml-engine versions create v1 \
+gcloud ml-engine versions create $VERSION_NAME \
     --model $MODEL_NAME \
-    --origin $MODEL_BINARIES \
+    --origin $deploymentUri \
     --runtime-version 1.13
 ```
 
@@ -327,6 +331,6 @@ There are lots of ways to serve models in CMLE, but we'll just use the single pr
 ```bash
 gcloud ml-engine predict \
     --model $MODEL_NAME \
-    --version v1 \
-    --json-instances test_prediction.json
+    --version $VERSION_NAME \
+--json-instances $INPUT_FILE
 ```
