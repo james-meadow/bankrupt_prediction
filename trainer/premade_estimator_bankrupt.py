@@ -34,6 +34,7 @@ def main(argv):
         feature_columns=my_feature_columns,
         # hidden_units=[64, 64, 64],
         hidden_units=[20, 20, 20],
+        # hidden_units=[10, 10], 
         n_classes=2, 
         model_dir='model/')
 
@@ -71,5 +72,5 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    # tf.logging.set_verbosity(tf.logging.INFO)
+    tf.logging.set_verbosity(tf.logging.ERROR)
     tf.app.run(main)

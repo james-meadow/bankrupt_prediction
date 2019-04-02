@@ -22,8 +22,8 @@ https://archive.ics.uci.edu/ml/datasets/Polish+companies+bankruptcy+data#
 BUCKET = "bankruptcy-prediction"
 LOCAL = 'data/'
 FULL_DATA = "all_years.csv"
-TRAIN_DATA = LOCAL + "1year_train.csv"
-TEST_DATA = LOCAL + "1year_test.csv"
+TRAIN_DATA = LOCAL + "train.csv"
+TEST_DATA = LOCAL + "test.csv"
 
 
 CSV_COLUMN_NAMES = ['Attr{}'.format(i) for i in range(1,65)]
@@ -66,7 +66,11 @@ def treat_data(BUCKET, FULL_DATA, TRAIN_DATA, TEST_DATA):
     full = pd.read_csv(LOCAL + FULL_DATA, names=CSV_COLUMN_NAMES, header=0) 
     
     for col in list(full)[:-1]: 
-        full = full[full[col] != '?']
+        try: 
+            full = full[full[col] != '?']
+        except: 
+            print('{} has all numeric values'.format(col))
+
 
     is_train = np.random.uniform(0, 1, len(full)) <= .8
     train, test = full[is_train == True], full[is_train == False]
@@ -87,11 +91,12 @@ def augment_data(x, y):
 
     ## create a multiplier. 
     ## This * n of the lower class results in new, more balanced dataset. 
-    aug_mult = 11
+    aug_mult = 35
+    # aug_mult = 11 
     nc = len(list(x))
 
     for i in range(aug_mult): 
-        x = pd.concat([x, aug_x * np.random.uniform(0.8, 1.2, nc)])
+        x = pd.concat([x, aug_x * np.random.uniform(0.5, 1.5, nc)])
         y = y.append(aug_y)
 
     print(1 - y.value_counts()[1] / len(y))
