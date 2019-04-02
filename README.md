@@ -306,8 +306,6 @@ deploymentUri=gs://$BUCKET_NAME/model/1554098440/
 VERSION_NAME=v3
 INPUT_FILE=test_prediction.json
 
-Model_Name must be unique within the Cloud ML Engine model.
-
 ## create model placeholder
 gcloud ml-engine models create $MODEL_NAME --regions=$REGION
 
@@ -321,6 +319,7 @@ gcloud ml-engine versions create $VERSION_NAME \
     --origin $deploymentUri \
     --runtime-version 1.13
 ```
+Model_Name must be unique within the Cloud ML Engine model.
 
 If all goes well, there is now a CMLE API awaiting new data in json format. You can call this from pretty much anywhere as long as the incoming data are in the correct format.
 
