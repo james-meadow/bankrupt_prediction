@@ -2,9 +2,9 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import pandas as pd
-import numpy as np 
+import numpy as np
 import tensorflow as tf
-from tensorflow.contrib.learn.python.learn.utils import input_fn_utils      
+from tensorflow.contrib.learn.python.learn.utils import input_fn_utils
 
 from google.cloud import storage
 
@@ -13,8 +13,8 @@ from google.cloud import storage
 
 
 """
-Dataset from here: 
-https://archive.ics.uci.edu/ml/datasets/Polish+companies+bankruptcy+data# 
+Dataset from here:
+https://archive.ics.uci.edu/ml/datasets/Polish+companies+bankruptcy+data#
 
 
 """
@@ -41,7 +41,7 @@ def upload_blob(bucket_name, source_file_name, destination_blob_name):
     print('File {} uploaded to {}.'.format(
         source_file_name,
         destination_blob_name))
-    
+
 
 def download_blob(bucket_name, source_blob_name, destination_file_name):
     """Downloads a blob from the bucket."""
@@ -56,41 +56,41 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
         destination_file_name))
 
 
-def treat_data(BUCKET, FULL_DATA, TRAIN_DATA, TEST_DATA): 
-    """brings in full csv and removes bad values 
-    returns new csv in place using the paths above """ 
-    download_blob(bucket_name=BUCKET, 
-                  source_blob_name='data/' + FULL_DATA, 
+def treat_data(BUCKET, FULL_DATA, TRAIN_DATA, TEST_DATA):
+    """brings in full csv and removes bad values
+    returns new csv in place using the paths above """
+    download_blob(bucket_name=BUCKET,
+                  source_blob_name='data/' + FULL_DATA,
                   destination_file_name= LOCAL + FULL_DATA)
 
-    full = pd.read_csv(LOCAL + FULL_DATA, names=CSV_COLUMN_NAMES, header=0) 
+    full = pd.read_csv(LOCAL + FULL_DATA, names=CSV_COLUMN_NAMES, header=0)
     
-    for col in list(full)[:-1]: 
+    for col in list(full)[:-1]:
         full = full[full[col] != '?']
 
     is_train = np.random.uniform(0, 1, len(full)) <= .8
     train, test = full[is_train == True], full[is_train == False]
-    train.to_csv(TRAIN_DATA) 
+    train.to_csv(TRAIN_DATA)
     test.to_csv(TEST_DATA)
 
 
-def augment_data(x, y): 
-    """Major balance problem, so jitter the numbers 
-    to improve predictions. """ 
-    ## what percent are bankruptcies 
+def augment_data(x, y):
+    """Major balance problem, so jitter the numbers
+    to improve predictions. """
+    ## what percent are bankruptcies
     print(1 - y.value_counts()[1] / len(y))
 
-    ## select the low-n class 
+    ## select the low-n class
     these = y == 1
     aug_y = y[these]
     aug_x = x[these]
 
-    ## create a multiplier. 
-    ## This * n of the lower class results in new, more balanced dataset. 
+    ## create a multiplier.
+    ## This * n of the lower class results in new, more balanced dataset.
     aug_mult = 11
     nc = len(list(x))
 
-    for i in range(aug_mult): 
+    for i in range(aug_mult):
         x = pd.concat([x, aug_x * np.random.uniform(0.8, 1.2, nc)])
         y = y.append(aug_y)
 
@@ -100,13 +100,13 @@ def augment_data(x, y):
 
 
 def load_data(y_name='class'):
-    """Returns the iris dataset as (train_x, train_y), (test_x, test_y)."""
+    """Returns the dataset as (train_x, train_y), (test_x, test_y)."""
     # train_path, test_path = maybe_download()
     treat_data(BUCKET, FULL_DATA, TRAIN_DATA, TEST_DATA)
 
     train_path, test_path = TRAIN_DATA, TEST_DATA
 
-    train = pd.read_csv(train_path, names=CSV_COLUMN_NAMES, header=0) 
+    train = pd.read_csv(train_path, names=CSV_COLUMN_NAMES, header=0)
     train_x, train_y = train, train.pop(y_name)
 
     test = pd.read_csv(test_path, names=CSV_COLUMN_NAMES, header=0)
@@ -154,14 +154,12 @@ def eval_input_fn(features, labels, batch_size):
 def serving_input_fn():
     feature_placeholders = {}
     keys = CSV_COLUMN_NAMES[:-1]
-    
+
     for i in keys:
         feature_placeholders[i] = tf.placeholder(tf.float32, [None])
     features = {
         key: tf.expand_dims(tensor, -1)
         for key, tensor in feature_placeholders.items()
     }
-    return tf.estimator.export.ServingInputReceiver(features, 
+    return tf.estimator.export.ServingInputReceiver(features,
                                                     feature_placeholders)
-
-
