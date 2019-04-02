@@ -247,9 +247,9 @@ classifier.evaluate(
 
 #### Evaluation
 
-At the end of training, we can use the randomly excluded dataset (`test_x` and `test_y`) to gauge the accuracy of the model. But accuracy is not the only thing to optimize. In this example, it is *really really* difficult, if not impossible to accurately predict which companies will go bankrupt just looking at their financials. So 100% accuracy is neither achievable, nor is it the right benchmark for us. Instead, we can target high-risk companies: Those that are predicted to go bankrupt even though they don't during this particular study. Therefore we can optimize for true positives and also false positives. Those false positives are the ones that look like they might go bankrupt but just make it through the study. 
+At the end of training, we can use the randomly excluded dataset (`test_x` and `test_y`) to gauge the accuracy of the model. But accuracy is not the only thing to optimize. In this example, it is *really really* difficult, if not impossible to accurately predict which companies will go bankrupt just looking at their financials. So 100% accuracy is neither achievable, nor is it the right benchmark for us. Instead, we can target high-risk companies: Those that are predicted to go bankrupt even though they don't during this particular study. Therefore we can optimize for true positives and also false positives. Those false positives are the ones that look like they might go bankrupt but just make it through the study.
 
-In other words, one potential way to optimize is to try to achieve: `true positive > false positive > false negative`. This might result in low accuracy, but accuracy might be the wrong benchmark, depending on the goal of a model. 
+In other words, one potential way to optimize is to try to achieve: `true positive > false positive > false negative`. This might result in low accuracy, but accuracy might be the wrong benchmark, depending on the goal of a model.
 
 First, we want to see just an aggregated accuracy score:
 
@@ -286,6 +286,13 @@ To put this model into production, we first save to a format that CMLE can easil
 classifier.export_savedmodel(
     "model-export",
     bankrupt_data.serving_input_fn)
+```
+
+Then we need to upload the exported model to the Cloud Storage bucket. Run the following command to upload your saved model to your bucket in Cloud Storage:
+
+```bash
+SAVED_MODEL_DIR=$(ls ./[your-export-dir-base] | tail -1)
+gsutil cp -r $SAVED_MODEL_DIR gs://[your-bucket]
 ```
 
 Next the model gets deployed using the `gcloud` command line tool:
