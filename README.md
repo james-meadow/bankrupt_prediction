@@ -20,23 +20,28 @@
 * Original data was in the `.arff` format, which was transformed to `.csv` using a script below.
 
 
-#### Environment
-Install virtual environment first
+#### Environment Setup
+Install virtual environment if you haven't.
 
 ```bash
 pip install virtualenv
 ```
-Assuming you have installed virtualenv, you can create and activate a new python 3 virtualenvironment:
+
+Assuming you have installed virtualenv, you can create and activate a new python 3 virtual environment:
 
 ```bash
 virtualenv —python python3 env
 source env/bin/activate
 pip install -r requirements.txt
 ```
-where env is the name of the environment.
+where 'env' is the name of the environment.
 
 The second line will active the virtual environment and this third line will install all of the dependencies/versions needed to execute this example preprocessing and model training.
 
+Also we need to install the latest version of Cloud SDK using the following command:
+```bash
+curl https://sdk.cloud.google.com | bash
+```
 
 #### Data prep
 
