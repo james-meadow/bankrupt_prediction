@@ -16,27 +16,9 @@ from google.cloud import storage
 Dataset from here: 
 https://archive.ics.uci.edu/ml/datasets/Polish+companies+bankruptcy+data# 
 
-CSV prep: 
-cat 1year.csv | cut -d, -f 2-10,65 > 1year_cols.csv
-cat 2year.csv | cut -d, -f 1-10,65 > 2year_cols.csv
-cat 1year.csv | cut -d, -f 1-10,65 > 3year_cols.csv
-
-cat 1year.csv > all_years.csv 
-tail -n +2 2year.csv >> all_years.csv 
-tail -n +2 3year.csv >> all_years.csv
-tail -n +2 4year.csv >> all_years.csv
-tail -n +2 5year.csv >> all_years.csv
 
 """
 
-# FULL_DATA = "~/Desktop/data/1year_cols.csv"
-# FULL_DATA = "~/Desktop/data/1year.csv"
-
-# FULL_DATA = "~/Desktop/data/all_years.csv"
-# TRAIN_DATA = "~/Desktop/data/1year_train.csv"
-# TEST_DATA = "~/Desktop/data/1year_test.csv"
-
-PROJECT = 'cloud-academy'
 BUCKET = "bankruptcy-prediction"
 LOCAL = 'data/'
 FULL_DATA = "all_years.csv"
@@ -76,8 +58,7 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
 
 def treat_data(BUCKET, FULL_DATA, TRAIN_DATA, TEST_DATA): 
     """brings in full csv and removes bad values 
-    returns new csvs in place using the paths above """
-    
+    returns new csv in place using the paths above """ 
     download_blob(bucket_name=BUCKET, 
                   source_blob_name='data/' + FULL_DATA, 
                   destination_file_name= LOCAL + FULL_DATA)
@@ -95,25 +76,25 @@ def treat_data(BUCKET, FULL_DATA, TRAIN_DATA, TEST_DATA):
 
 def augment_data(x, y): 
     """Major balance problem, so jitter the numbers 
-    to improve predictions. """
-    
-    print(1 - y.value_counts()[1] / y.value_counts()[0])
+    to improve predictions. """ 
+    ## what percent are bankruptcies 
+    print(1 - y.value_counts()[1] / len(y))
+
+    ## select the low-n class 
     these = y == 1
-    
     aug_y = y[these]
     aug_x = x[these]
 
+    ## create a multiplier. 
+    ## This * n of the lower class results in new, more balanced dataset. 
     aug_mult = 11
-    l = len(x)
     nc = len(list(x))
 
     for i in range(aug_mult): 
         x = pd.concat([x, aug_x * np.random.uniform(0.8, 1.2, nc)])
         y = y.append(aug_y)
 
-    # print(train_x)    
-    # print(y)
-    print(1 - y.value_counts()[1] / y.value_counts()[0])
+    print(1 - y.value_counts()[1] / len(y))
 
     return x, y
 

@@ -3,65 +3,124 @@
 #### James Meadow 
 #### 3/20/2019 
 
-*Demonstrates an example pipeline to use one of the pre-built TensorFlow Estimators (DNN).*
+*Demonstrates an example classification pipeline to use a pre-built TensorFlow Estimators (DNN).*
 
 ----------
 
+### Gather Data and Runbook 
 
-
-
-
+*This section holds the commands to quickly treat data, and to compile, train, evaluate, and send a prediction. Detailed breakdown is below in the `Details...` section*
 
 #### Dataset: Company bankruptcy predictions. 
 
 * Full dataset can be found [here](https://archive.ics.uci.edu/ml/datasets/Polish+companies+bankruptcy+data#) 
+* Download all dataset files to work through this exercise 
 * Has 60+ numeric features associated with finances of thousands of Polish companies. 
-* This model implementation uses the `1year` dataset to predict which of the companis will go bankrupt in the first year of the study. 
-* Original data was in the `.arff` format, which was transformed to `.csv` 
-
+* This model implementation uses all years of the dataset to predict which of the companies will go bankrupt during the study. 
+* Original data was in the `.arff` format, which was transformed to `.csv` using a script below. 
 
 
 #### Environment 
 
-Assuming you have installed Homebrew or Linuxbrew simply run:
+Assuming you have installed virtualenv, you can create and activate a new python 3 virtualenvironment:
 
 ```bash 
-brew install pipenv 
-pipenv install 
+virtualenv —python python3 env
+source env/bin/activate 
+pip install -r requirements.txt 
 ```
 
-This will install all of the dependencies/versions needed to execute this example preprocessing and model training. 
-
-If you are starting a new `pipenv` project, you can install packages like this: 
-
-```bash 
-pipenv install tensorflow
-```
-
-Etc. In this exercise, you'll need `tensorflow`, `pandas`, and `numpy`. But you don't have to worry about that if you just utilize the `pipenv install` command above. 
+This third line will install all of the dependencies/versions needed to execute this example preprocessing and model training. 
 
 
 #### Data prep 
 
-
 First, convert the `.arff` to `.csv`. Not entirely necessary, but `.csv` is easier to work with. Do this with a simple script adapted from [here](https://github.com/Hutdris/arff2csv/blob/master/arff2csv.py). 
+
 
 ```bash 
 $ arff2csv.py 1year.arff 1year.csv 
+... 
 ``` 
 
-
-Then, we can select any of the columns we need to make good predictions. Sometimes it is worth having all, but for simplicity, we'll just use the first 5. And include #65 since that one has our labels.  
+Then we can pile them all together. This will create a dataset of companies that either did or did not go bankrupt during a 5 year study. 
 
 ```bash
-$ cat 1year.csv | cut -d, -f 1,2,3,4,5,65 > 1year_cols.csv
+$ cat 1year.csv > all_years.csv 
+$ tail -n +2 2year.csv >> all_years.csv 
+$ tail -n +2 3year.csv >> all_years.csv
+$ tail -n +2 4year.csv >> all_years.csv
+$ tail -n +2 5year.csv >> all_years.csv
 ``` 
 
-These can now be saved in a GCS bucket and be called when our model trains. 
+This can now be saved in a GCS bucket and be called when our model trains. 
+
+Of course you'll need to use a GCS bucket that you can access and a GCP project with your permissions. You can change those parameters in the top of the `bankrupt_data.py` file. 
+
+
+#### Runbook 
+
+
+Assuming the data are already treated (as above in the Data Prep section), the primary python script is `premade_estimator_bankrupt.py`. This will call a handfull of functions from the `bankrupt_data.py` script. 
+
+Here is the one-liner that will kick off the whole process (preprocessing --> training --> validating --> testing --> saving)
+
+```
+python3 ./premade_estimator_bankrupt.py 
+```
+
+
+If all is set up correctly, this should show you a verbose output while it compiles, trains, and evaluates the model. 
+
+When the model is optimized to your liking, we can deploy to CMLE by selecting the correct inside `deploy_cmle.sh`: 
+
+```bash 
+MODEL_NAME=bankrupt_prediction 
+REGION=us-central1 
+BUCKET_NAME=bankrupt-prediction
+OUTPUT_PATH=gs://$BUCKET_NAME/model
+MODEL_BINARIES=gs://$BUCKET_NAME/model/1554098440/
+
+## create model in CMLE 
+gcloud ml-engine models create $MODEL_NAME --regions=$REGION
+
+## list the bucket to make sure everything is in place 
+gsutil ls -r $OUTPUT_PATH
+gsutil ls -r $MODEL_BINARIES
+
+## create a new version of an existing model 
+gcloud ml-engine versions create v3 \
+    --model $MODEL_NAME \
+    --origin $MODEL_BINARIES \
+    --runtime-version 1.13
+``` 
+
+Then a single command sends data to the model to the CMLE endpoint for a new prediction. The `test_prediction.json` file was created for demo purposes by the `create_single_prediction_json.py` file. 
+
+```bash 
+gcloud ml-engine predict \
+    --model $MODEL_NAME \
+    --version v3 \
+    --json-instances test_prediction.json
+``` 
+
+You should get a response that looks something like this, which shows that this company will not go bankrupt during the study, which is correct!  
+
+```
+CLASS_IDS  CLASSES  LOGISTIC  LOGITS                 PROBABILITIES
+[0]        [u'0']   [0.0]     [-265.59613037109375]  [1.0, 0.0]
+```
+
+
+
+-----------
+
+
+### Details from `bankrupt_data.py` and `premade_estimator_bankrupt.py` 
+
+*Everything below this line is just an explanation of the code that already executed during the Runbook section above.*
 
 #### Preprocessing 
-
-We can pull apart the different steps involved in cleaning and separating the data into test and training sets. 
 
 First to read the data: 
 
@@ -75,7 +134,6 @@ Then remove oddball characters. This is always a problem, and one of the more ma
 for col in list(full)[:-1]: 
     print(col) 
     full = full[full[col] != '?']
-
 ```
 
 Next split the dataset into test and train. Generally this should be done randomly, so the vertical structure doesn't introduce biases. For example, in this dataset, the bankrupt companies are all at the bottom of the file. So we need to randomize to ensure slightly better balance: 
@@ -91,6 +149,19 @@ Finally, we can pull the predictor vs response columns so they feed into the mod
 train_x, train_y = train, train.pop(y_name)
 test_x, test_y = test, test.pop(y_name)
 ```
+
+Since this is a highly unbalanced dataset (and the small class is insufficiently small), we'll have to do a bit of data augmentation to expand the smallest class. Not ideal, and there are lots of other ways to augment data, but we can use this quick and dirty method to our advantage as we optimize parameters. In this case, I'll just add a small amount of random noise to expand the bankrupt companies 
+
+```bash 
+these = y == 1
+aug_y = y[these]
+aug_x = x[these]
+x = pd.concat([x, aug_x * np.random.uniform(0.8, 1.2, nc)])
+y = y.append(aug_y)
+``` 
+
+This can be performed a number of times until a useful balance can be achieved. 
+
 
 #### TF Input functions 
 
@@ -115,6 +186,21 @@ else:
 dataset = tf.data.Dataset.from_tensor_slices(inputs)
 ```
 
+We also need a function to tell the model what to expect after it has been deployed to CMLE. This can be done by creating a structure of `tf.placeholder`s for each feature the model should expect: 
+
+```python  
+feature_placeholders = {}
+keys = CSV_COLUMN_NAMES[:-1]
+
+for i in keys:
+    feature_placeholders[i] = tf.placeholder(tf.float32, [None])
+features = {
+    key: tf.expand_dims(tensor, -1)
+    for key, tensor in feature_placeholders.items()
+}
+```
+
+
 #### Estimator function 
 
 This will all be put inside of a function, so see `premade_estimator_bankrupt.py` for the flow of data. Here are the relevant parts. 
@@ -125,7 +211,7 @@ We'll use the pre-build TensorFlow `DNNClassifier` model, with a simple set of p
 ```python
 classifier = tf.estimator.DNNClassifier(
     feature_columns=my_feature_columns,
-    hidden_units=[10, 10],
+    hidden_units=[20, 20, 20],
     n_classes=2)
 ```
 
@@ -148,36 +234,83 @@ classifier.evaluate(
 ```
 
 
-And voila! A *relatively* simple example showing how to harness the power of the pre-built TensorFlow Estimator models. 
 
+#### Evaluation 
 
-#### Runbook 
+At the end of training, we can use the randomly excluded dataset (`test_x` and `test_y`) to gauge the accuracy of the model. But accuracy is not the only thing to optimize. In this example, it is *really really* difficult, if not impossible to accurately predict which companies will go bankrupt just looking at their financials. So 100% accuracy is not the right benchmark for us. Instead, we can target high-risk companies: Those that are predicted to go bankrupt even though they don't during this particular study. Therefore we can optimize for true positives and also false positives. Those false positives are the ones that look like they might go bankrupt but just make it through the study. 
 
-To actually run the model, of course, one shouldn't just paste in all these blocks. There are lots of options, but here are the instructions to run a packaged version: 
+First, we want to see just an aggregated accuracy score: 
 
-Assuming the data are already treated (as above in the Data Prep section), the primary python script is `premade_estimator_bankrupt.py` and it will run all of the pre-processing steps contained in the `bankrupt_data.py` script. 
+```python
+eval_result = classifier.evaluate(
+    input_fn=lambda:bankrupt_data.eval_input_fn(test_x, test_y,
+                                                args.batch_size))
 
+print('\nTest set accuracy: {accuracy:0.3f}\n'.format(**eval_result))
 ```
-pipenv run python premade_estimator_bankrupt.py 
+
+But I'm more interested in how the model deals with those that are at risk of bankruptcy, so we want to explore the confusion matrix: 
+
+```python 
+raw_predictions = classifier.predict(
+    input_fn=lambda:bankrupt_data.eval_input_fn(test_x, 
+        labels=None, batch_size=args.batch_size))    
+predictions = [p['class_ids'][0] for p in raw_predictions]
+confusion_matrix = tf.confusion_matrix(list(test_y.tolist()), predictions)
+with tf.Session():
+    print('\nConfusion Matrix:\n', 
+          tf.Tensor.eval(confusion_matrix,feed_dict=None, session=None))
 ```
 
-If all is set up correctly, this should show you a verbose output while it compiles, trains, and evaluates the model. 
-
-From here, you can choose to save the model in many different formats, or deploy it with Cloud ML Engine as an endpoint to be called by a separate service. For example, if the data are streaming into BigQuery, you can write a simple Cloud Function script that queries new data, format it appropriately, and then send it to the endpoint for a fresh set of predictions. 
-
-Next in this series, we'll look at some options for deploying this model in production! 
+Depending on how we want to use these predictions, we can either optimize for high accuracy, or allow lower accuracy and generate a risk score for companies that look like they might go bankrupt. 
 
 
 
+#### Deploy to CMLE 
 
+To put this model into production, we first save to a format that CMLE can easily take in, and use our `serving_input_fn()` as the input placeholder: 
 
+```python 
+classifier.export_savedmodel(
+    "model-export", 
+    bankrupt_data.serving_input_fn) 
+```
 
+Next the model gets deployed using the `gcloud` command line tool: 
 
+```bash 
+MODEL_NAME=bankrupt_prediction 
+REGION=us-central1 
+BUCKET_NAME=bankrupt-prediction
+OUTPUT_PATH=gs://$BUCKET_NAME/model
+MODEL_BINARIES=gs://$BUCKET_NAME/model/1554098440/
 
+## create model placeholder 
+gcloud ml-engine models create $MODEL_NAME --regions=$REGION
 
+## list the bucket 
+gsutil ls -r $OUTPUT_PATH
+gsutil ls -r $MODEL_BINARIES
 
+## create a new version of an existing model 
+gcloud ml-engine versions create v1 \
+    --model $MODEL_NAME \
+    --origin $MODEL_BINARIES \
+    --runtime-version 1.13
+```
 
+If all goes well, there is now a CMLE API awaiting new data in json format. You can call this from pretty much anywhere as long as the incoming data are in the correct format. 
 
+#### Serve predictions 
+
+There are lots of ways to serve models in CMLE, but we'll just use the single prediction method, since that's what the input function expects. 
+
+```bash 
+gcloud ml-engine predict \
+    --model $MODEL_NAME \
+    --version v1 \
+    --json-instances test_prediction.json
+```
 
 
 

@@ -3,7 +3,7 @@ pandas_gbq
 sklearn
 numpy 
 keras
-tensorflow==1.11.0 
+tensorflow==1.13.1 
 jsonpickle 
 google-cloud 
 google-cloud-storage
