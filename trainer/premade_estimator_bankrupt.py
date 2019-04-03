@@ -24,8 +24,6 @@ def main(argv):
     # Fetch the data
     (train_x, train_y), (test_x, test_y) = bankrupt_data.load_data()
 
-
-    # Feature columns describe how to use the input.
     my_feature_columns = []
     for key in train_x.keys():
         my_feature_columns.append(tf.feature_column.numeric_column(key=key))
@@ -45,7 +43,6 @@ def main(argv):
         steps=args.train_steps)
 
     
-    ###############################################
     # Evaluate the model.
     eval_result = classifier.evaluate(
         input_fn=lambda:bankrupt_data.eval_input_fn(test_x, test_y,
@@ -62,7 +59,6 @@ def main(argv):
         print('\nConfusion Matrix:\n', tf.Tensor.eval(confusion_matrix,feed_dict=None, session=None))
 
 
-    ###############################################
     ## Export the model 
     classifier.export_savedmodel(
         "model-export", 
