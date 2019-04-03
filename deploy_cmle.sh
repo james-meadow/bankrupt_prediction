@@ -3,7 +3,7 @@
 
 ##################################################
 ## Run this each time a new model is put into production
-##   Change deploymentUri and version number
+##   Change deployment and version number
 ##   The last command will send a
 ##   single prediction to test the deployment
 ##################################################
@@ -12,8 +12,8 @@
 MODEL_NAME=bankrupt_prediction
 REGION=us-central1
 BUCKET_NAME=bankrupt-prediction
-#OUTPUT_PATH=gs://$BUCKET_NAME/model
-deploymentUri=gs://$BUCKET_NAME/model/1554098440/
+OUTPUT_PATH=gs://$BUCKET_NAME/model
+DEPLOYMENT=gs://$BUCKET_NAME/model/1554098440/
 VERSION_NAME=v3
 INPUT_FILE=test_prediction.json
 
@@ -29,12 +29,12 @@ INPUT_FILE=test_prediction.json
 ## Only use if deploying a new version
 # gcloud ml-engine versions create $VERSION_NAME \
 #     --model $MODEL_NAME \
-#     --origin $deploymentUri \
+#     --origin $DEPLOYMENT \
 #     --runtime-version 1.13
-#     --python-version=2.7
+#     --python-version=3.6
 
 ## Send a prediction using a json file.
 gcloud ml-engine predict \
     --model $MODEL_NAME \
     --version $VERSION_NAME \
---json-instances $INPUT_FILE
+    --json-instances $INPUT_FILE

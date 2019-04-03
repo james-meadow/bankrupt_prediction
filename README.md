@@ -302,7 +302,7 @@ MODEL_NAME=bankrupt_prediction
 REGION=us-central1
 BUCKET_NAME=bankrupt-prediction
 OUTPUT_PATH=gs://$BUCKET_NAME/model
-deploymentUri=gs://$BUCKET_NAME/model/1554098440/
+DEPLOYMENT=gs://$BUCKET_NAME/model/1554098440/
 VERSION_NAME=v3
 INPUT_FILE=test_prediction.json
 
@@ -316,10 +316,11 @@ gsutil ls -r $MODEL_BINARIES
 ## create a new version of an existing model
 gcloud ml-engine versions create $VERSION_NAME \
     --model $MODEL_NAME \
-    --origin $deploymentUri \
+    --origin $DEPLOYMENT \
     --runtime-version 1.13
 ```
-Model_Name must be unique within the Cloud ML Engine model.
+
+Keep in mind that MODEL_NAME must be unique within the Cloud ML Engine model.
 
 If all goes well, there is now a CMLE API awaiting new data in json format. You can call this from pretty much anywhere as long as the incoming data are in the correct format.
 
