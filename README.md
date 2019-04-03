@@ -247,9 +247,9 @@ classifier.evaluate(
 
 #### Evaluation
 
-At the end of training, we can use the randomly excluded dataset (`test_x` and `test_y`) to gauge the accuracy of the model. But accuracy is not the only thing to optimize. In this example, it is *really really* difficult, if not impossible to accurately predict which companies will go bankrupt just looking at their financials. So 100% accuracy is neither achievable, nor is it the right benchmark for us. Instead, we can target high-risk companies: Those that are predicted to go bankrupt even though they don't during this particular study. Therefore we can optimize for true positives and also false positives. Those false positives are the ones that look like they might go bankrupt but just make it through the study. 
+At the end of training, we can use the randomly excluded dataset (`test_x` and `test_y`) to gauge the accuracy of the model. But accuracy is not the only thing to optimize. In this example, it is *really really* difficult, if not impossible to accurately predict which companies will go bankrupt just looking at their financials. So 100% accuracy is neither achievable, nor is it the right benchmark for us. Instead, we can target high-risk companies: Those that are predicted to go bankrupt even though they don't during this particular study. Therefore we can optimize for true positives and also false positives. Those false positives are the ones that look like they might go bankrupt but just make it through the study.
 
-In other words, one potential way to optimize is to try to achieve: `true positive > false positive > false negative`. This might result in low accuracy, but accuracy might be the wrong benchmark, depending on the goal of a model. 
+In other words, one potential way to optimize is to try to achieve: `true positive > false positive > false negative`. This might result in low accuracy, but accuracy might be the wrong benchmark, depending on the goal of a model.
 
 First, we want to see just an aggregated accuracy score:
 
@@ -288,6 +288,13 @@ classifier.export_savedmodel(
     bankrupt_data.serving_input_fn)
 ```
 
+Then we need to upload the exported model to the Cloud Storage bucket. Run the following command to upload your saved model to your bucket in Cloud Storage:
+
+```bash
+SAVED_MODEL_DIR=$(ls ./[your-export-dir-base] | tail -1)
+gsutil cp -r $SAVED_MODEL_DIR gs://[your-bucket]
+```
+
 Next the model gets deployed using the `gcloud` command line tool:
 
 ```bash
@@ -295,7 +302,9 @@ MODEL_NAME=bankrupt_prediction
 REGION=us-central1
 BUCKET_NAME=bankrupt-prediction
 OUTPUT_PATH=gs://$BUCKET_NAME/model
-MODEL_BINARIES=gs://$BUCKET_NAME/model/1554098440/
+deploymentUri=gs://$BUCKET_NAME/model/1554098440/
+VERSION_NAME=v3
+INPUT_FILE=test_prediction.json
 
 ## create model placeholder
 gcloud ml-engine models create $MODEL_NAME --regions=$REGION
@@ -305,11 +314,12 @@ gsutil ls -r $OUTPUT_PATH
 gsutil ls -r $MODEL_BINARIES
 
 ## create a new version of an existing model
-gcloud ml-engine versions create v1 \
+gcloud ml-engine versions create $VERSION_NAME \
     --model $MODEL_NAME \
-    --origin $MODEL_BINARIES \
+    --origin $deploymentUri \
     --runtime-version 1.13
 ```
+Model_Name must be unique within the Cloud ML Engine model.
 
 If all goes well, there is now a CMLE API awaiting new data in json format. You can call this from pretty much anywhere as long as the incoming data are in the correct format.
 
@@ -320,6 +330,6 @@ There are lots of ways to serve models in CMLE, but we'll just use the single pr
 ```bash
 gcloud ml-engine predict \
     --model $MODEL_NAME \
-    --version v1 \
-    --json-instances test_prediction.json
+    --version $VERSION_NAME \
+--json-instances $INPUT_FILE
 ```
