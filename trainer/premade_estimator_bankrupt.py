@@ -8,7 +8,7 @@ from __future__ import print_function
 import argparse
 import tensorflow as tf
 
-from tensorflow.contrib.learn.python.learn.utils import input_fn_utils      
+from tensorflow.contrib.learn.python.learn.utils import input_fn_utils
 import bankrupt_data
 
 
@@ -24,6 +24,8 @@ def main(argv):
     # Fetch the data
     (train_x, train_y), (test_x, test_y) = bankrupt_data.load_data()
 
+
+    # Feature columns describe how to use the input.
     my_feature_columns = []
     for key in train_x.keys():
         my_feature_columns.append(tf.feature_column.numeric_column(key=key))
@@ -32,8 +34,8 @@ def main(argv):
         feature_columns=my_feature_columns,
         # hidden_units=[64, 64, 64],
         hidden_units=[20, 20, 20],
-        # hidden_units=[10, 10], 
-        n_classes=2, 
+        # hidden_units=[10, 10],
+        n_classes=2,
         model_dir='model/')
 
     # Train the Model.
@@ -42,7 +44,8 @@ def main(argv):
                                                  args.batch_size),
         steps=args.train_steps)
 
-    
+
+    ###############################################
     # Evaluate the model.
     eval_result = classifier.evaluate(
         input_fn=lambda:bankrupt_data.eval_input_fn(test_x, test_y,
@@ -50,20 +53,23 @@ def main(argv):
 
     print('\nTest set accuracy: {accuracy:0.3f}\n'.format(**eval_result))
 
+    ###############################################
+    # Predict and print the confusion matrix.
     raw_predictions = classifier.predict(
-        input_fn=lambda:bankrupt_data.eval_input_fn(test_x, 
-            labels=None, batch_size=args.batch_size))    
+        input_fn=lambda:bankrupt_data.eval_input_fn(test_x,
+            labels=None, batch_size=args.batch_size))
     predictions = [p['class_ids'][0] for p in raw_predictions]
     confusion_matrix = tf.confusion_matrix(list(test_y.tolist()), predictions)
     with tf.Session():
         print('\nConfusion Matrix:\n', tf.Tensor.eval(confusion_matrix,feed_dict=None, session=None))
 
 
-    ## Export the model 
+    ###############################################
+    # Export and save the model.
     classifier.export_savedmodel(
-        "model-export", 
-        bankrupt_data.serving_input_fn) 
-        # bankrupt_data.eval_input_fn) 
+        "model-export",
+        bankrupt_data.serving_input_fn)
+        # bankrupt_data.eval_input_fn)
 
 
 
