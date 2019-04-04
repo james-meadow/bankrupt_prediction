@@ -1,13 +1,13 @@
 ## Tensorflow Estimator Example
 
-#### James Meadow
+#### James Meadow & Jason Shi
 #### 3/20/2019
 
 *Demonstrates an example classification pipeline to use a pre-built TensorFlow Estimators (DNN).*
 
 ----------
 
-### Gather Data and Runbook
+### Data Gathering and Runbook
 
 *This section holds the commands to quickly treat data, and to compile, train, evaluate, and send a prediction. Detailed breakdown is below in the `Details...` section*
 
@@ -126,7 +126,7 @@ CLASS_IDS  CLASSES  LOGISTIC  LOGITS                 PROBABILITIES
 -----------
 
 
-### Details from `bankrupt_data.py` and `premade_estimator_bankrupt.py`
+### Details of Data Pre-processing, Modeling, and Deployment
 
 *Everything below this line is just an explanation of the code that already executed during the Runbook section above.*
 
@@ -276,7 +276,9 @@ with tf.Session():
 
 Depending on how we want to use these predictions, we can either optimize for high accuracy, or allow lower accuracy and generate a risk score for companies that look like they might go bankrupt.
 
-
+After you have trained your model, you must make important adjustments before deploying it to Cloud ML Engine for predictions.
+    1.Export your model to a SavedModel that can be deployed to Cloud ML Engine.
+    2.Ensure that the file size of your SavedModel is under the Cloud ML Engine default limit of 250 MB by exporting a graph specifically for prediction.
 
 #### Deploy to CMLE
 
@@ -287,6 +289,7 @@ classifier.export_savedmodel(
     "model-export",
     bankrupt_data.serving_input_fn)
 ```
+
 
 Then we need to upload the exported model to the Cloud Storage bucket. Run the following command to upload your saved model to your bucket in Cloud Storage:
 
