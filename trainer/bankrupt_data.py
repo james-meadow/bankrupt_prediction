@@ -64,10 +64,10 @@ def treat_data(BUCKET, FULL_DATA, TRAIN_DATA, TEST_DATA):
                   destination_file_name= LOCAL + FULL_DATA)
 
     full = pd.read_csv(LOCAL + FULL_DATA, names=CSV_COLUMN_NAMES, header=0)
-    for col in list(full)[:-1]: 
-        try: 
+    for col in list(full)[:-1]:
+        try:
             full = full[full[col] != '?']
-        except: 
+        except:
             print('{} has all numeric values'.format(col))
 
     is_train = np.random.uniform(0, 1, len(full)) <= .8
@@ -77,7 +77,7 @@ def treat_data(BUCKET, FULL_DATA, TRAIN_DATA, TEST_DATA):
 
 
 def augment_data(x, y):
-    """Major balance problem, so jitter the numbers
+    """Major unbalanced dataset, so jitter the numbers
     to improve predictions. """
     ## what percent are bankruptcies
     print(1 - y.value_counts()[1] / len(y))
@@ -87,13 +87,13 @@ def augment_data(x, y):
     aug_y = y[these]
     aug_x = x[these]
 
-    ## create a multiplier. 
-    ## This * n of the lower class results in new, more balanced dataset. 
+    ## create a multiplier.
+    ## This * n of the lower class results in new, more balanced dataset.
     aug_mult = 35
-    # aug_mult = 11 
+    # aug_mult = 11
     nc = len(list(x))
 
-    for i in range(aug_mult): 
+    for i in range(aug_mult):
         x = pd.concat([x, aug_x * np.random.uniform(0.5, 1.5, nc)])
         y = y.append(aug_y)
 
@@ -164,5 +164,4 @@ def serving_input_fn():
         key: tf.expand_dims(tensor, -1)
         for key, tensor in feature_placeholders.items()
     }
-    return tf.estimator.export.ServingInputReceiver(features,
-                                                    feature_placeholders)
+    return tf.estimator.export.ServingInputReceiver(features, feature_placeholders)

@@ -126,7 +126,7 @@ CLASS_IDS  CLASSES  LOGISTIC  LOGITS                 PROBABILITIES
 -----------
 
 
-### Details of Data Pre-processing, Modeling, and Deployment
+### Details of Data Preprocessing, Modeling, and Deployment
 
 *Everything below this line is just an explanation of the code that already executed during the Runbook section above.*
 
