@@ -94,10 +94,6 @@ MODEL_BINARIES=gs://$BUCKET_NAME/model/1554098440/
 ## create model in CMLE
 gcloud ml-engine models create $MODEL_NAME --regions=$REGION
 
-## list the bucket to make sure everything is in place
-gsutil ls -r $OUTPUT_PATH
-gsutil ls -r $MODEL_BINARIES
-
 ## create a new version of an existing model
 gcloud ml-engine versions create v3 \
     --model $MODEL_NAME \
