@@ -312,10 +312,6 @@ INPUT_FILE=test_prediction.json
 ## create model placeholder
 gcloud ml-engine models create $MODEL_NAME --regions=$REGION
 
-## list the bucket
-gsutil ls -r $OUTPUT_PATH
-gsutil ls -r $MODEL_BINARIES
-
 ## create a new version of an existing model
 gcloud ml-engine versions create $VERSION_NAME \
     --model $MODEL_NAME \
