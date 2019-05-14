@@ -119,7 +119,7 @@ CLASS_IDS  CLASSES  LOGISTIC  LOGITS                 PROBABILITIES
 
 ### Hyperparameters Tuning
 
-Hyperparameters are stored in a hptuning_config.yaml file. You can tune the hyperparameters and train the model using the following command:
+Hyperparameters are stored in a hptuning_config.yaml file. 'job1' is the name of the job being trained on gcloud ai-platform, config is the hyperparameters file, runtime-version is the version of TensorFlow and job-dir is the GCS storage bucket where the model will be exported. You can tune the hyperparameters and train the model using the following command:
 
 ```bash
 gcloud ai-platform jobs submit training job1 \
@@ -133,7 +133,7 @@ gcloud ai-platform jobs submit training job1 \
   --stream-logs
 ```
 
-job1 is the name of the job being trained on gcloud ai-platform, config is the hyperparameters file, runtime-version is the version of TensorFlow and job-dir is the GCS storage bucket where the model will be exported.
+
 -----------
 
 
