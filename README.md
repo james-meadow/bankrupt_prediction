@@ -133,6 +133,7 @@ gcloud ai-platform jobs submit training job1 \
   --stream-logs
 ```
 
+'job1' is the name of the job being trained on gcloud ai-platform, config is the hyperparameters file, runtime-version is the version of TensorFlow and job-dir is the GCS storage bucket where the model will be exported.
 -----------
 
 
