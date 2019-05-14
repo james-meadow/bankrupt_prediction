@@ -117,7 +117,21 @@ CLASS_IDS  CLASSES  LOGISTIC  LOGITS                 PROBABILITIES
 [0]        [u'0']   [0.0]     [-265.59613037109375]  [1.0, 0.0]
 ```
 
+### Hyperparameters Tuning
 
+Hyperparameters are stored in a hptuning_config.yaml file. You can tune the hyperparameters and train the model using the following command:
+
+```bash
+gcloud ai-platform jobs submit training job1 \
+  --config hptuning_config.yaml \
+  --package-path trainer/ \
+  --module-name trainer.premade_estimator_bankrupt \
+  --region us-central1 \
+  --python-version 3.5 \
+  --runtime-version 1.13 \
+  --job-dir=gs://bankrupt-prediction/model/train \
+  --stream-logs
+```
 
 -----------
 

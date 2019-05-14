@@ -5,10 +5,9 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.learn.python.learn.utils import input_fn_utils
-
+from tensorflow.python.lib.io import file_io
+from pandas.compat import StringIO
 from google.cloud import storage
-
-
 
 
 
@@ -19,17 +18,17 @@ https://archive.ics.uci.edu/ml/datasets/Polish+companies+bankruptcy+data#
 
 """
 
-BUCKET = "bankruptcy-prediction"
-LOCAL = 'data/'
+BUCKET = "bankrupt-prediction"
+# LOCAL = os.path.join(tempfile.gettempdir(), 'data')
 FULL_DATA = "all_years.csv"
-TRAIN_DATA = LOCAL + "train.csv"
-TEST_DATA = LOCAL + "test.csv"
+TRAIN_DATA = "train.csv"
+TEST_DATA = "test.csv"
 
 
 CSV_COLUMN_NAMES = ['Attr{}'.format(i) for i in range(1,65)]
 CSV_COLUMN_NAMES.append('class')
 RESPONSE = [0, 1]
-
+#
 def upload_blob(bucket_name, source_file_name, destination_blob_name):
     """Uploads a file to the bucket."""
     storage_client = storage.Client()
@@ -42,6 +41,13 @@ def upload_blob(bucket_name, source_file_name, destination_blob_name):
         source_file_name,
         destination_blob_name))
 
+#
+
+def read_data(gcs_path):
+   print('downloading csv file from', gcs_path)
+   file_stream = file_io.FileIO(gcs_path, mode='r')
+   data = pd.read_csv(StringIO(file_stream.read()))
+   return data
 
 def download_blob(bucket_name, source_blob_name, destination_file_name):
     """Downloads a blob from the bucket."""
@@ -59,11 +65,11 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
 def treat_data(BUCKET, FULL_DATA, TRAIN_DATA, TEST_DATA):
     """brings in full csv and removes bad values
     returns new csv in place using the paths above """
-    download_blob(bucket_name=BUCKET,
-                  source_blob_name='data/' + FULL_DATA,
-                  destination_file_name= LOCAL + FULL_DATA)
-
-    full = pd.read_csv(LOCAL + FULL_DATA, names=CSV_COLUMN_NAMES, header=0)
+    # download_blob(bucket_name=BUCKET,
+    #               source_blob_name='data/' + FULL_DATA,
+    #               destination_file_name= LOCAL + FULL_DATA)
+    full = read_data('gs://bankrupt-prediction/data/all_years.csv')
+    # full = pd.read_csv(LOCAL + FULL_DATA, names=CSV_COLUMN_NAMES, header=0)
     for col in list(full)[:-1]:
         try:
             full = full[full[col] != '?']
