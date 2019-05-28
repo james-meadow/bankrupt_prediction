@@ -117,24 +117,11 @@ CLASS_IDS  CLASSES  LOGISTIC  LOGITS                 PROBABILITIES
 [0]        [u'0']   [0.0]     [-265.59613037109375]  [1.0, 0.0]
 ```
 
-### Hyperparameters Tuning
-
-Hyperparameters are stored in a hptuning_config.yaml file. 'job1' is the name of the job being trained on gcloud ai-platform, config is the hyperparameters file, runtime-version is the version of TensorFlow and job-dir is the GCS storage bucket where the model will be exported. You can tune the hyperparameters and train the model using the following command:
-
-```bash
-gcloud ai-platform jobs submit training job1 \
-  --config hptuning_config.yaml \
-  --package-path trainer/ \
-  --module-name trainer.premade_estimator_bankrupt \
-  --region us-central1 \
-  --python-version 3.5 \
-  --runtime-version 1.13 \
-  --job-dir=gs://bankrupt-prediction/model/train \
-  --stream-logs
-```
 
 
 -----------
+
+
 
 
 ### Details of Data Preprocessing, Modeling, and Deployment
@@ -256,6 +243,31 @@ classifier.evaluate(
 
 
 
+#### Hyperparameter Tuning
+
+HP tuning is an important part of any Deep Learning project. We can test the model persformance against a long list of potential parameters. For example, we can instruct the model to test a variety of batch sizes to determine if that incluences the fit. For this example, we'll test `batch_size` and `learning_rate` as a demonstration of CMLE HP tyning. 
+
+Using CMLE (ai-platform) to test hyperparameters is fairly straightforward, but you'll need to be careful to set up the config file correctly. 
+
+Hyperparameter configurations in this example are stored in `hptuning_config.yaml`. This job is just named 'job1', and that name can be used to check logs during and after tuning. 
+
+Once the yaml config file is sorted out, you can start the job in gcloud using the following command (which is in `hp_tune.sh`:
+
+```bash
+gcloud ai-platform jobs submit training job1 \
+  --config hptuning_config.yaml \
+  --package-path trainer/ \
+  --module-name trainer.premade_estimator_bankrupt \
+  --region us-central1 \
+  --python-version 3.5 \
+  --runtime-version 1.13 \
+  --job-dir=gs://bankrupt-prediction/model/train \
+  --stream-logs
+```
+
+In this example, the range of hyperparameters didn't make a huge difference, but we can see that `batch_size=100` and `learning_rate=0.04` give us a slightly more balanced confusion matrix. As a reminder, we're not interested in perfect accuracy -- bankruptcy is an incredibly difficult thing to predict. Rather we're interested in raising a red flag on companies that look like they are at risk. We can use this to evaluate things like investments and forecast revenue. Thus we see that 1/2 of companies in the evaluation dataset look to be at risk. Great first step, so now on to train the model. 
+
+
 #### Evaluation
 
 At the end of training, we can use the randomly excluded dataset (`test_x` and `test_y`) to gauge the accuracy of the model. But accuracy is not the only thing to optimize. In this example, it is *really really* difficult, if not impossible to accurately predict which companies will go bankrupt just looking at their financials. So 100% accuracy is neither achievable, nor is it the right benchmark for us. Instead, we can target high-risk companies: Those that are predicted to go bankrupt even though they don't during this particular study. Therefore we can optimize for true positives and also false positives. Those false positives are the ones that look like they might go bankrupt but just make it through the study.
@@ -288,8 +300,9 @@ with tf.Session():
 Depending on how we want to use these predictions, we can either optimize for high accuracy, or allow lower accuracy and generate a risk score for companies that look like they might go bankrupt.
 
 After you have trained your model, you must make important adjustments before deploying it to Cloud ML Engine for predictions.
-    1.Export your model to a SavedModel that can be deployed to Cloud ML Engine.
-    2.Ensure that the file size of your SavedModel is under the Cloud ML Engine default limit of 250 MB by exporting a graph specifically for prediction.
+
+1. Export your model to a SavedModel that can be deployed to Cloud ML Engine.
+2. Ensure that the file size of your SavedModel is under the Cloud ML Engine default limit of 250 MB by exporting a graph specifically for prediction.
 
 #### Deploy to CMLE
 
