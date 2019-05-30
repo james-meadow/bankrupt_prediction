@@ -108,6 +108,7 @@ def main(args):
 
 
 
+
 if __name__ == '__main__':
     args = get_args()
     tf.logging.set_verbosity(tf.logging.ERROR)

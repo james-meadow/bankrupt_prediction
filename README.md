@@ -265,14 +265,14 @@ gcloud ai-platform jobs submit training job1 \
   --stream-logs
 ```
 
-In this example, the range of hyperparameters didn't make a huge difference, but we can see that `batch_size=100` and `learning_rate=0.04` give us a slightly more balanced confusion matrix. As a reminder, we're not interested in perfect accuracy -- bankruptcy is an incredibly difficult thing to predict. Rather we're interested in raising a red flag on companies that look like they are at risk. We can use this to evaluate things like investments and forecast revenue. Thus we see that 1/2 of companies in the evaluation dataset look to be at risk. Great first step, so now on to train the model. 
+In this example, the range of hyperparameters didn't make a huge difference, but for this model, `batch_size=100` and `learning_rate=0.04` give us a slightly more balanced confusion matrix. In the Evaluation section, we'll discuss the goals in a bit more detail, but we're not interested in perfect accuracy -- bankruptcy is an incredibly difficult thing to predict. Rather we're interested in raising a red flag on companies that look like they are at risk. We can use this to evaluate things like investments and forecast revenue. Thus we see that 1/2 of companies in the evaluation dataset look to be at risk. Great first step, so now on to train the model using these updated parameters. 
 
 
 #### Evaluation
 
 At the end of training, we can use the randomly excluded dataset (`test_x` and `test_y`) to gauge the accuracy of the model. But accuracy is not the only thing to optimize. In this example, it is *really really* difficult, if not impossible to accurately predict which companies will go bankrupt just looking at their financials. So 100% accuracy is neither achievable, nor is it the right benchmark for us. Instead, we can target high-risk companies: Those that are predicted to go bankrupt even though they don't during this particular study. Therefore we can optimize for true positives and also false positives. Those false positives are the ones that look like they might go bankrupt but just make it through the study.
 
-In other words, one potential way to optimize is to try to achieve: `true positive > false positive > false negative`. This might result in low accuracy, but accuracy might be the wrong benchmark, depending on the goal of a model.
+In other words, one potential way to optimize is to try to achieve: `true positive > false positive > false negative`. This might result in low accuracy, but accuracy is sometimes the wrong benchmark, depending on the goal of a model.
 
 First, we want to see just an aggregated accuracy score:
 
@@ -299,12 +299,32 @@ with tf.Session():
 
 Depending on how we want to use these predictions, we can either optimize for high accuracy, or allow lower accuracy and generate a risk score for companies that look like they might go bankrupt.
 
+#### Performance 
+
+As explained above, sometimes the goal is not strictly accuracy, but rather identifying high-risk targets. In this case, we want to identify companies who's financials resemble those of bankrupted companies. Thus let's see. how the model performs. This output is from the confusion matrix command above.  
+
+
+```
+Test set accuracy: 0.565
+
+Confusion Matrix:
+ [[2568 1319]
+ [1861 1559]]
+```
+
+So yes, very low accuracy, but we're actually leaning in the right direction for identifying high risk profiles. We've almost achieved our goal: `correct (57%) > at risk (18%) > incorrect (25%)`
+
+Now we can focus on those companies that are not bankrupt yet, but are predicted to be at risk. Thus one potential follow-up step in this project could be to analyze their financial profiles to evaluate which features are the strongest indicators for bankruptcy, and then dig in with subject matter experts to design a risk-analysis framework. There is lots of additional optimization and exploration that can enhance these results, but that's for another day! 
+
+
+
+
+#### Deploy to CMLE
+
 After you have trained your model, you must make important adjustments before deploying it to Cloud ML Engine for predictions.
 
 1. Export your model to a SavedModel that can be deployed to Cloud ML Engine.
 2. Ensure that the file size of your SavedModel is under the Cloud ML Engine default limit of 250 MB by exporting a graph specifically for prediction.
-
-#### Deploy to CMLE
 
 To put this model into production, we first save to a format that CMLE can easily take in, and use our `serving_input_fn()` as the input placeholder:
 
@@ -342,6 +362,7 @@ gcloud ml-engine versions create $VERSION_NAME \
     --origin $DEPLOYMENT \
     --runtime-version 1.13
 ```
+
 
 Keep in mind that MODEL_NAME must be unique within the Cloud ML Engine model.
 
