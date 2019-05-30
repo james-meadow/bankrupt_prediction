@@ -9,7 +9,7 @@ import argparse
 import tensorflow as tf
 
 from tensorflow.contrib.learn.python.learn.utils import input_fn_utils
-from . import bankrupt_data
+import bankrupt_data
 
 
 #
@@ -27,8 +27,9 @@ def get_args():
   parser = argparse.ArgumentParser()
   parser.add_argument(
       '--job-dir',
+      # default=
       type=str,
-      required=True,
+      # required=True,
       help='local or GCS location for writing checkpoints and exporting models')
   # parser.add_argument(
   #     '--num-epochs',
@@ -73,8 +74,9 @@ def main(args):
 
     # Train the Model.
     classifier.train(
-        input_fn=lambda:bankrupt_data.train_input_fn(train_x, train_y,
-                                                 100),
+        input_fn=lambda:bankrupt_data.train_input_fn(train_x, 
+          train_y,
+          100),
         steps=100)
 
 
