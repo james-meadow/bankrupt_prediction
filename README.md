@@ -245,13 +245,36 @@ classifier.evaluate(
 
 #### Hyperparameter Tuning
 
-HP tuning is an important part of any Deep Learning project. We can test the model persformance against a long list of potential parameters. For example, we can instruct the model to test a variety of batch sizes to determine if that incluences the fit. For this example, we'll test `batch_size` and `learning_rate` as a demonstration of CMLE HP tyning. 
+HP tuning is an important part of any Deep Learning project. We can test the model performance against a long list of potential parameters. For example, we can instruct the model to test a variety of batch sizes to determine if that incluences the fit. For this example, we'll test `batch_size` and `learning_rate` as a simple demonstration of CMLE HP tuning. 
 
 Using CMLE (ai-platform) to test hyperparameters is fairly straightforward, but you'll need to be careful to set up the config file correctly. 
 
-Hyperparameter configurations in this example are stored in `hptuning_config.yaml`. This job is just named 'job1', and that name can be used to check logs during and after tuning. 
+Hyperparameter configurations in this example are stored in `hptuning_config.yaml`. This job is just named 'job1', and that name can be used to check logs during and after tuning. The yaml format lays out the parameters we want to test. Clearly this is a small subset of potential hyperparameters and ranges, but we'll just focus on a simple example for now: 
 
-Once the yaml config file is sorted out, you can start the job in gcloud using the following command (which is in `hp_tune.sh`:
+```bash 
+trainingInput:
+  hyperparameters:
+    goal: MAXIMIZE
+    hyperparameterMetricTag: epoch_acc
+    maxTrials: 4
+    maxParallelTrials: 2
+    params:
+    - parameterName: batch_size
+      type: INTEGER
+      minValue: 100
+      maxValue: 102
+      scaleType: UNIT_LINEAR_SCALE
+    - parameterName: learning_rate
+      type: DOUBLE
+      minValue: 0.01
+      maxValue: 0.1
+      scaleType: UNIT_LOG_SCALE
+```
+
+
+
+
+Once the yaml config file is sorted out, you can start the job in gcloud using the following command (which is in `hp_tune.sh`):
 
 ```bash
 gcloud ai-platform jobs submit training job1 \
@@ -272,7 +295,7 @@ In this example, the range of hyperparameters didn't make a huge difference, but
 
 At the end of training, we can use the randomly excluded dataset (`test_x` and `test_y`) to gauge the accuracy of the model. But accuracy is not the only thing to optimize. In this example, it is *really really* difficult, if not impossible to accurately predict which companies will go bankrupt just looking at their financials. So 100% accuracy is neither achievable, nor is it the right benchmark for us. Instead, we can target high-risk companies: Those that are predicted to go bankrupt even though they don't during this particular study. Therefore we can optimize for true positives and also false positives. Those false positives are the ones that look like they might go bankrupt but just make it through the study.
 
-In other words, one potential way to optimize is to try to achieve: `true positive > false positive > false negative`. This might result in low accuracy, but accuracy is sometimes the wrong benchmark, depending on the goal of a model.
+In other words, one potential way to optimize is to try to achieve: `true > false positive > false negative`. This might result in low accuracy, but accuracy is sometimes the wrong benchmark, depending on the goal of a model.
 
 First, we want to see just an aggregated accuracy score:
 
@@ -301,7 +324,7 @@ Depending on how we want to use these predictions, we can either optimize for hi
 
 #### Performance 
 
-As explained above, sometimes the goal is not strictly accuracy, but rather identifying high-risk targets. In this case, we want to identify companies who's financials resemble those of bankrupted companies. Thus let's see. how the model performs. This output is from the confusion matrix command above.  
+As explained above, sometimes the goal is not strictly accuracy, but rather identifying high-risk targets. In this case, we want to identify companies who's financials resemble those of bankrupted companies. Thus let's see how the model performs. This output is from the confusion matrix command above.  
 
 
 ```
@@ -312,7 +335,7 @@ Confusion Matrix:
  [1861 1559]]
 ```
 
-So yes, very low accuracy, but we're actually leaning in the right direction for identifying high risk profiles. We've almost achieved our goal: `correct (57%) > at risk (18%) > incorrect (25%)`
+So yes, very low accuracy, but we're actually leaning in the right direction for identifying high risk profiles. We've almost achieved our goal to identify correct=57%,  at-risk=18%, & incorrect=25%. 
 
 Now we can focus on those companies that are not bankrupt yet, but are predicted to be at risk. Thus one potential follow-up step in this project could be to analyze their financial profiles to evaluate which features are the strongest indicators for bankruptcy, and then dig in with subject matter experts to design a risk-analysis framework. There is lots of additional optimization and exploration that can enhance these results, but that's for another day! 
 
