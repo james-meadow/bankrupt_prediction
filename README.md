@@ -144,6 +144,9 @@ for col in list(full)[:-1]:
     full = full[full[col] != '?']
 ```
 
+*Note there is another interesting approach to identifying and removing these funky values in the `data_exploration.ipynb` script. The version above was used in the official preprocessing workflow.* 
+
+
 Next split the dataset into test and train. Generally this should be done randomly, so the vertical structure doesn't introduce biases. For example, in this dataset, the bankrupt companies are all at the bottom of the file. So we need to randomize to ensure slightly better balance:
 
 ```python
@@ -158,7 +161,9 @@ train_x, train_y = train, train.pop(y_name)
 test_x, test_y = test, test.pop(y_name)
 ```
 
-Since this is a highly unbalanced dataset (and the small class is insufficiently small), we'll have to do a bit of data augmentation to expand the smallest class. Not ideal, and there are lots of other ways to augment data, but we can use this quick and dirty method to our advantage as we optimize parameters. In this case, I'll just add a small amount of random noise to expand the bankrupt companies
+Since this is a highly unbalanced dataset (and the small class is insufficiently small), we'll have to do a bit of data augmentation to expand the smallest class. Not ideal, and there are lots of other ways to augment data, but we can use this quick and dirty method to our advantage as we optimize parameters. In this case, I'll just add a small amount of random noise to expand the bankrupt companies. 
+
+*Note there is an exploration of the `SMOTE` function for balancing in `data_exploration.ipynb`, but it did not improve performance of the model, so the version below is used in this first take on the model.* 
 
 ```bash
 these = y == 1
@@ -168,7 +173,48 @@ x = pd.concat([x, aug_x * np.random.uniform(0.8, 1.2, nc)])
 y = y.append(aug_y)
 ```
 
-This can be performed a number of times until a useful balance can be achieved.
+This can be iterated with variable balance rates and random noise until a useful balance can be achieved. We found that these variables captured most of the performance variability we see in the model, so this is a great lever to get the model to put out the right results. 
+
+
+We also explored removing some of the more highly-correlated variables (of which there are lots!), but found that this did not effectively improve model performance. This makes sense since DNN models are not terribly sensitive to correlation within features. The model tends to learn to ignore anything that doesn't help. 
+
+```python 
+def correlation_heatmap(train):
+    correlations = train.corr()
+
+    fig, ax = plt.subplots(figsize=(20,20))
+    sns.heatmap(correlations, vmax=1.0, center=0, fmt='.2f',
+                square=True, linewidths=.1, annot=False, cbar_kws={"shrink": .50})
+    plt.show();
+    
+correlation_heatmap(data)
+```
+
+![full-correlation](figs/full_corr.png)
+
+Since there are lots of correlations in this dataset, let's see whether we can influence model fit by removing them. 
+
+```python
+# Create correlation matrix
+corr_matrix = refined_data.corr().abs()
+
+# Select upper triangle of correlation matrix
+upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool))
+
+# Find index of feature columns with correlation greater than 0.95
+to_drop = [column for column in upper.columns if any(upper[column] > 0.55)]
+refined_data.drop(to_drop, axis=1, inplace=True)
+```
+
+We've now removed many columns and the result is a much less highly correlated feature set: 
+
+```python
+correlation_heatmap(refined_data)
+```
+
+![reduced_correlation](figs/reduced_corr.png)
+
+We can pass both through the model and find out if this improves our results (update: it doesn't). 
 
 
 #### TF Input functions
