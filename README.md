@@ -214,7 +214,29 @@ correlation_heatmap(refined_data)
 
 ![reduced_correlation](figs/reduced_corr.png)
 
-We can pass both through the model and find out if this improves our results (update: it doesn't). 
+And we can check out which columns were cut. Note the dataset is annoyingly labeled with 'Attr1' etc for the feature names. The original names are available with the data source (linked at the top of this document, and captured in `feature_names.txt`), so here is a quick lookup function: 
+
+```python 
+def feature_name(st): 
+    i = int(st.strip('Attr'))
+    return feature_names[i-1]
+
+cut_cols = ['Attr3', 'Attr6', 'Attr8', 'Attr10', 'Attr11', 'Attr14'] 
+[print(feature_name(f)) for f in cut_cols]
+```
+
+```
+working capital / total assets
+retained earnings / total assets
+book value of equity / total liabilities
+equity / total assets
+(gross profit + extraordinary items + financial expenses) / total assets
+(gross profit + interest) / total assets
+```
+
+Well these actually make sense. If we look back at the column names that were kept, these are generally derivative of the kept columns. No harm in cutting them. 
+
+We can pass both through the model and find out if this improves our results (update: it doesn't change much). 
 
 
 #### TF Input functions
