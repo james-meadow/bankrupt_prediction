@@ -1,7 +1,7 @@
 ## Tensorflow Estimator Example
 
-#### James Meadow & Jason Shi
-#### 3/20/2019
+#### James Meadow, Jason Shi, Maryam Veisi 
+#### 6/4/2019
 
 *Demonstrates an example classification pipeline to use a pre-built TensorFlow Estimators (DNN).*
 
